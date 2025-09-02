@@ -75,36 +75,6 @@ curl http://localhost:8000/jobs/<job_id>
 curl http://localhost:8000/media/<media_id>/artifacts
 ```
 
-## Tech & Choices
-
-- **Exactly-once-ish**: at-least-once Celery with idempotent DB writes and object keys
-- **Backpressure**: let Redis queue grow; scale workers; add rate limiters/timeouts
-- **Extensible**: add GPU worker, embeddings, CRDT status updates, retries/DLQ, Prometheus
-
-## Resume bullets (suggested)
-
-- Designed and deployed a Celery/Redis-based distributed media processing pipeline on Docker,
-  processing concurrent jobs with ffmpeg and Pillow; tracked state in Postgres and stored
-  artifacts in MinIO; exposed REST APIs and monitoring via Flower.
-- Achieved horizontal scalability (N workers) and idempotent processing with content-hash keys;
-  implemented thumbnail and 480p transcode with presigned URL retrieval.
-
-## Repository layout
-
-```
-/docs
-  design.md
-  runbook.md
-  benchmarks.md
-/services
-  common/...
-  api/...
-  worker/...
-/deploy
-  docker-compose.yml (root-level)
-sample_data/
-```
-
 ## License
 MIT
 
@@ -116,9 +86,3 @@ Visit **http://localhost:8000/dashboard** for live job counts and recent activit
 
 ## New: Kubernetes Manifests
 See `deploy/k8s/*.yaml` and `docs/k8s.md` for cluster deployment, plus an HPA for worker scaling.
-
-## Optional GPU Worker (Stub)
-- Folder: `services/worker-gpu/`
-- Queue: `gpu`
-- Demonstrates an embedding + GPU-ready worker structure (uses CPU torch by default).
-- Uncomment the `worker-gpu` block in `docker-compose.yml` and configure GPUs to try it.
