@@ -1,0 +1,119 @@
+services:
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: media
+      POSTGRES_PASSWORD: media
+      POSTGRES_DB: media
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U media"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:RELEASE.2024-06-13T22-53-53Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio12345
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"  # S3
+      - "9001:9001"  # Console
+
+  createbuckets:
+    image: minio/mc:RELEASE.2025-05-21T01-59-54Z
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc alias set local http://minio:9000 minio minio12345) do echo '...waiting...' && sleep 2; done;
+      /usr/bin/mc mb -p local/media || true;
+      /usr/bin/mc mb -p local/outputs || true;
+      /usr/bin/mc anonymous set download local/outputs || true;
+      exit 0;
+      "
+
+  api:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    environment:
+      PUBLIC_MINIO_BASE: "http://localhost:9000"
+      DATABASE_URL: postgresql+psycopg2://media:media@postgres:5432/media
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio12345
+      MINIO_SECURE: "false"
+      MEDIA_BUCKET: media
+      OUTPUTS_BUCKET: outputs
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - postgres
+      - minio
+      - createbuckets
+
+  worker:
+    build:
+      context: ./services/worker
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg2://media:media@postgres:5432/media
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio12345
+      MINIO_SECURE: "false"
+      MEDIA_BUCKET: media
+      OUTPUTS_BUCKET: outputs
+    depends_on:
+      - redis
+      - postgres
+      - minio
+      - createbuckets
+
+  flower:
+    image: mher/flower:1.2.0
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+
+volumes:
+  minio_data:
+
+
+# Optional GPU worker (demo). Requires CUDA drivers and --gpus.
+# Uncomment to enable and route certain jobs to 'gpu' queue.
+# worker-gpu:
+#   build:
+#     context: ./services/worker-gpu
+#     dockerfile: Dockerfile
+#   environment:
+#     DATABASE_URL: postgresql+psycopg2://media:media@postgres:5432/media
+#     REDIS_URL: redis://redis:6379/0
+#     MINIO_ENDPOINT: minio:9000
+#     MINIO_ACCESS_KEY: minio
+#     MINIO_SECRET_KEY: minio12345
+#     MINIO_SECURE: "false"
+#     MEDIA_BUCKET: media
+#     OUTPUTS_BUCKET: outputs
+#   deploy:
+#     resources:
+#       reservations:
+#         devices:
+#           - capabilities: ["gpu"]

@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Media Pipeline Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Media Pipeline Dashboard</h1>
+    <div class="sub">Jobs, throughput & latency (live)</div>
+  </header>
+
+  <section class="cards">
+    <div class="card"><div class="label">Queued</div><div id="queued" class="value">0</div></div>
+    <div class="card"><div class="label">Processing</div><div id="processing" class="value">0</div></div>
+    <div class="card"><div class="label">Done</div><div id="done" class="value">0</div></div>
+    <div class="card"><div class="label">Failed</div><div id="failed" class="value">0</div></div>
+    <div class="card"><div class="label">p50 (s)</div><div id="p50" class="value">–</div></div>
+    <div class="card"><div class="label">p95 (s)</div><div id="p95" class="value">–</div></div>
+  </section>
+
+  <section>
+    <h2>Recent Jobs</h2>
+    <table id="jobs">
+      <thead>
+        <tr><th>ID</th><th>Status</th><th>Media</th><th>Created</th><th>Updated</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <footer>
+    <a href="/docs" target="_blank">API Docs</a> · <a href="http://localhost:5555" target="_blank">Flower</a>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

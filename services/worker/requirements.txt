@@ -1,0 +1,6 @@
+celery[redis]==5.3.6
+minio==7.2.7
+sqlalchemy==2.0.30
+psycopg2-binary==2.9.9
+pydantic==2.7.4
+pillow==10.3.0

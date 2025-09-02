@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: api, namespace: media-pipeline}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: api}}
+  template:
+    metadata: {labels: {app: api}}
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/example/media-api:latest # change to your image
+          ports: [{containerPort: 8000}]
+          env:
+            - {name: DATABASE_URL, value: postgresql+psycopg2://media:media@postgres.media-pipeline.svc.cluster.local:5432/media}
+            - {name: REDIS_URL, value: redis://redis.media-pipeline.svc.cluster.local:6379/0}
+            - {name: MINIO_ENDPOINT, value: minio.media-pipeline.svc.cluster.local:9000}
+            - {name: MINIO_ACCESS_KEY, valueFrom: {secretKeyRef: {name: minio-secret, key: MINIO_ROOT_USER}}}
+            - {name: MINIO_SECRET_KEY, valueFrom: {secretKeyRef: {name: minio-secret, key: MINIO_ROOT_PASSWORD}}}
+            - {name: MINIO_SECURE, value: "false"}
+            - {name: MEDIA_BUCKET, value: media}
+            - {name: OUTPUTS_BUCKET, value: outputs}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: api, namespace: media-pipeline}
+spec:
+  selector: {app: api}
+  ports: [{name: http, port: 80, targetPort: 8000}]

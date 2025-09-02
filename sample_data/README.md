@@ -1,0 +1,1 @@
+Place sample images/videos here. We included a tiny placeholder file.

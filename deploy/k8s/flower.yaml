@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: flower, namespace: media-pipeline}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: flower}}
+  template:
+    metadata: {labels: {app: flower}}
+    spec:
+      containers:
+        - name: flower
+          image: mher/flower:1.2.0
+          env:
+            - {name: CELERY_BROKER_URL, value: redis://redis.media-pipeline.svc.cluster.local:6379/0}
+          ports: [{containerPort: 5555}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: flower, namespace: media-pipeline}
+spec:
+  selector: {app: flower}
+  ports: [{name: http, port: 5555, targetPort: 5555}]
